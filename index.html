@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>产线出勤系统</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; }
+    body { background: #f4f7fb; padding: 12px 8px 80px; min-height: 100vh; display: flex; flex-direction: column; align-items: center; }
+    .app { max-width: 600px; width: 100%; margin: 0 auto; }
+    h1 { font-size: 1.7rem; font-weight: 600; color: #0b2b4a; margin: 4px 0 8px; display: flex; align-items: center; justify-content: space-between; padding: 0 4px; }
+    h1 small { font-size: 0.8rem; font-weight: 400; color: #4b6b8b; background: #e9eef4; padding: 4px 10px; border-radius: 30px; }
+    .card { background: white; border-radius: 20px; padding: 16px 12px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.04), 0 2px 4px rgba(0,0,0,0.02); border: 1px solid #eef2f6; }
+    .section-title { font-size: 1.1rem; font-weight: 600; color: #1a3b5e; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; padding-left: 4px; }
+    .section-title i { font-style: normal; background: #d0e0ff; width: 6px; height: 20px; border-radius: 6px; display: inline-block; }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+    .row > * { flex: 1 1 auto; }
+    input, select, button { font-size: 0.95rem; padding: 12px 14px; border-radius: 14px; border: 1.5px solid #d9e2ec; background: white; outline: none; transition: 0.2s; width: 100%; -webkit-appearance: none; appearance: none; }
+    input:focus, select:focus { border-color: #4c8bf5; box-shadow: 0 0 0 3px rgba(76, 139, 245, 0.15); }
+    button { background: #1a5bbf; color: white; font-weight: 600; border: none; cursor: pointer; padding: 12px 16px; display: flex; align-items: center; justify-content: center; gap: 6px; letter-spacing: 0.3px; box-shadow: 0 4px 8px rgba(26, 91, 191, 0.2); transition: 0.15s; -webkit-tap-highlight-color: transparent; }
+    button:active { transform: scale(0.97); background: #0e3f8a; }
+    button.secondary { background: white; color: #1a5bbf; border: 1.5px solid #1a5bbf; box-shadow: none; }
+    button.secondary:active { background: #eef4ff; }
+    button.tiny { padding: 8px 12px; font-size: 0.78rem; border-radius: 30px; width: auto; }
+    .tag { display: inline-flex; align-items: center; background: #eef3fa; border-radius: 30px; padding: 6px 12px; font-size: 0.85rem; margin: 3px 4px 3px 0; gap: 6px; max-width: 100%; overflow: hidden; white-space: nowrap; }
+    .tag .close { font-size: 1.1rem; font-weight: 700; color: #8a9eb0; margin-left: 4px; cursor: pointer; line-height: 1; }
+    .tag-list { display: flex; flex-wrap: wrap; margin: 8px 0; }
+    .table-wrapper { overflow-x: auto; margin: 12px 0 8px; border-radius: 16px; border: 1px solid #e2eaf1; background: white; -webkit-overflow-scrolling: touch; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; min-width: 280px; }
+    th, td { padding: 10px 6px; text-align: left; border-bottom: 1px solid #eef2f6; white-space: nowrap; }
+    th { background: #f7faff; color: #1e3f66; font-weight: 600; font-size: 0.75rem; letter-spacing: 0.3px; text-transform: uppercase; }
+    td { color: #1f3347; }
+    .job-badge { background: #e4edf9; padding: 4px 10px; border-radius: 30px; font-size: 0.72rem; font-weight: 500; color: #1e4c7a; display: inline-block; white-space: nowrap; }
+    .machine-badge { background: #fff1d6; color: #885e00; padding: 4px 8px; border-radius: 30px; font-size: 0.72rem; font-weight: 600; display: inline-block; min-width: 42px; text-align: center; }
+    .leave-badge { background: #ffe1e1; color: #b33a3a; padding: 4px 10px; border-radius: 30px; font-size: 0.72rem; font-weight: 600; display: inline-block; }
+    .off-badge { background: #e9ecf0; color: #5b6f82; padding: 4px 10px; border-radius: 30px; font-size: 0.72rem; font-weight: 500; display: inline-block; }
+    .status-dot { width: 8px; height: 8px; border-radius: 10px; display: inline-block; margin-right: 5px; }
+    .flex-between { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+    .btn-group button { flex: 1 1 auto; min-width: 120px; }
+    .empty-message { color: #8a9eb0; font-size: 0.9rem; padding: 20px 0; text-align: center; }
+    .day-badge { background: #d9e6ff; padding: 4px 12px; border-radius: 30px; font-size: 0.8rem; color: #1a4a8a; font-weight: 600; }
+    .day-badge.tomorrow { background: #e1f0e8; color: #1a6e4a; }
+    .day-badge.history { background: #f0e1ff; color: #6b3fa0; }
+    .hint { font-size: 0.7rem; color: #7c8fa3; margin-top: 4px; padding-left: 4px; }
+    .rate-bar-wrap { display: flex; align-items: center; gap: 8px; }
+    .rate-bar { height: 10px; border-radius: 6px; background: #eef2f6; overflow: hidden; width: 70px; flex: none; }
+    .rate-bar-fill { height: 100%; border-radius: 6px; transition: width 0.4s, background 0.4s; }
+    .rate-text { font-weight: 600; font-size: 0.78rem; min-width: 44px; }
+    .leave-count { font-weight: 700; font-size: 0.85rem; }
+    .leave-count.zero { color: #1e7e34; }
+    .leave-count.some { color: #b33a3a; }
+    /* 周日历选择器 */
+    .week-calendar { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+    .calendar-nav { display: flex; align-items: center; justify-content: space-between; background: #f4f7fb; border-radius: 14px; padding: 4px; }
+    .calendar-nav button { width: 36px; height: 36px; padding: 0; border-radius: 12px; background: white; color: #1a5bbf; border: 1px solid #d9e2ec; box-shadow: none; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
+    .calendar-nav button:active { background: #eef4ff; }
+    .calendar-nav .month-label { font-weight: 600; color: #0b2b4a; font-size: 0.95rem; }
+    .week-list { display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto; padding-right: 2px; }
+    .week-item { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; border-radius: 12px; background: #fbfdff; border: 1.5px solid #eef2f6; cursor: pointer; transition: 0.15s; font-size: 0.82rem; }
+    .week-item:active { background: #eef4ff; }
+    .week-item.active { border-color: #1a5bbf; background: #eef4ff; box-shadow: 0 0 0 2px rgba(26,91,191,0.12); }
+    .week-item .week-num { font-weight: 600; color: #1a3b5e; }
+    .week-item .week-range { color: #7c8fa3; font-size: 0.72rem; }
+    .week-item .week-badge { font-size: 0.65rem; padding: 2px 8px; border-radius: 20px; background: #d9e6ff; color: #1a4a8a; font-weight: 600; }
+    .week-item.active .week-badge { background: #1a5bbf; color: white; }
+    /* 截图用快照 */
+    #export-snapshot { position: fixed; left: -9999px; top: 0; background: #fff; padding: 20px; border-radius: 20px; width: 480px; z-index: -1; }
+    #export-snapshot .snapshot-title { font-size: 1.2rem; font-weight: 600; color: #0b2b4a; margin-bottom: 4px; }
+    #export-snapshot .snapshot-subtitle { font-size: 0.75rem; color: #7c8fa3; margin-bottom: 16px; }
+    #export-snapshot table { width: 100%; min-width: auto; }
+    #export-snapshot .table-wrapper { overflow: visible; border-radius: 16px; border: 1px solid #e2eaf1; }
+    .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(10,30,60,0.92); color: #fff; padding: 12px 22px; border-radius: 40px; font-size: 0.85rem; z-index: 9999; box-shadow: 0 6px 20px rgba(0,0,0,0.2); opacity: 0; pointer-events: none; transition: opacity 0.3s, transform 0.3s; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(-10px); }
+  </style>
+</head>
+<body>
+<div class="app">
+  <h1>📋 产线出勤系统<small>Powered by Cloudflare</small></h1>
+
+  <!-- 人员管理 -->
+  <div class="card">
+    <div class="section-title"><i></i>👤 牛马录入</div>
+    <div class="row">
+      <input type="text" id="empIdInput" placeholder="工号 (例如 60000000)" style="flex:2;">
+      <input type="text" id="empNameInput" placeholder="姓名" style="flex:2;">
+    </div>
+    <div class="row">
+      <input type="text" id="empJobInput" placeholder="职责 (如 开机, 拉料, 数据统计)" style="flex:3;">
+    </div>
+    <div class="row">
+      <input type="text" id="empMachineInput" placeholder="机台号 (开机必填, 如 1#)" style="flex:2;">
+      <select id="empRestDay" style="flex:1.5;">
+        <option value="0">周日O班</option>
+        <option value="1">周一O班</option>
+        <option value="2">周二O班</option>
+        <option value="3">周三O班</option>
+        <option value="4">周四O班</option>
+        <option value="5">周五O班</option>
+        <option value="6">周六O班</option>
+      </select>
+    </div>
+    <div class="btn-group">
+      <button id="addEmpBtn">➕ 添加人员</button>
+      <button id="clearAllBtn" class="secondary">🗑️ 清空所有</button>
+    </div>
+    <div id="employeeList" class="tag-list"></div>
+  </div>
+
+  <!-- 今日出勤表 -->
+  <div class="card">
+    <div class="flex-between">
+      <div class="section-title" style="margin-bottom:0;"><i></i>📅 今日出勤表</div>
+      <span class="day-badge" id="todayWeekdayLabel">星期一</span>
+    </div>
+    <div id="attendanceTableWrapper" class="table-wrapper"></div>
+    <div class="btn-group">
+      <button id="exportAttendanceImgBtn" class="secondary">📸 导出今日出勤表图片</button>
+      <button id="refreshAttendanceBtn" class="secondary">🔄 重新生成</button>
+    </div>
+    <div class="hint">💡 点击表格中人员行可切换请假/出勤状态（自动记录到当周统计）</div>
+  </div>
+
+  <!-- 次日出勤表 -->
+  <div class="card">
+    <div class="flex-between">
+      <div class="section-title" style="margin-bottom:0;"><i></i>📅 次日出勤表</div>
+      <span class="day-badge tomorrow" id="tomorrowWeekdayLabel">星期二</span>
+    </div>
+    <div id="tomorrowTableWrapper" class="table-wrapper"></div>
+    <div class="btn-group">
+      <button id="exportTomorrowImgBtn" class="secondary">📸 导出次日出勤表图片</button>
+      <button id="refreshTomorrowBtn" class="secondary">🔄 重新生成</button>
+    </div>
+    <div class="hint">💡 点击表格中人员行可切换请假/出勤状态（自动记录到当周统计）</div>
+  </div>
+
+  <!-- 排班表（周日历切换） -->
+  <div class="card">
+    <div class="flex-between">
+      <div class="section-title" style="margin-bottom:0;"><i></i>📆 排班表 · 出勤率</div>
+      <span class="day-badge" id="viewingWeekBadge">本周</span>
+    </div>
+    <!-- 周日历选择器 -->
+    <div class="week-calendar">
+      <div class="calendar-nav">
+        <button id="calPrevMonthBtn" aria-label="上个月">‹</button>
+        <span class="month-label" id="calMonthLabel">2026年11月</span>
+        <button id="calNextMonthBtn" aria-label="下个月">›</button>
+      </div>
+      <div class="week-list" id="weekList"></div>
+    </div>
+    <div id="scheduleWeekLabel" style="font-size:0.75rem;color:#7c8fa3;padding-left:4px;margin-bottom:4px;"></div>
+    <div id="scheduleTableWrapper" class="table-wrapper"></div>
+    <div class="btn-group">
+      <button id="exportScheduleImgBtn" class="secondary">📸 导出排班表图片</button>
+      <button id="backToCurrentWeekBtn" class="secondary" style="display:none;">↩️ 返回当前周</button>
+    </div>
+    <div class="hint">💡 点击上方周日历切换周查看；出勤率 = 实际出勤天数 / 应出勤天数</div>
+  </div>
+</div>
+
+<!-- 导出快照容器 & 轻提示 -->
+<div id="export-snapshot" aria-hidden="true"></div>
+<div id="toast" class="toast"></div>
+
+<script>
+  (function() {
+    const KV_KEY = 'production_line_data_v2';
+
+    // ============================================================
+    // 数据层
+    // ============================================================
+    function getDefaultData() {
+      return {
+        employees: [
+          { id: '60408168', name: '房金阳', job: '班长', machine: '', restDay: 0 }
+        ],
+        leaveRecords: {},
+        weeklyStats: {},
+      };
+    }
+	async function loadData() {
+	  try {
+		const res = await fetch('/api/data');
+		if (!res.ok) throw new Error('load failed');
+		const data = await res.json();
+		if (!data.weeklyStats) data.weeklyStats = {};
+		if (!data.leaveRecords) data.leaveRecords = {};
+		return data;
+	  } catch (e) {
+		console.error('KV 加载失败，使用默认数据', e);
+		return getDefaultData();
+	  }
+	}
+
+	async function saveData(data) {
+	  try {
+		await fetch('/api/data', {
+		  method: 'POST',
+		  headers: { 'Content-Type': 'application/json' },
+		  body: JSON.stringify(data),
+		});
+	  } catch (e) {
+		console.error('KV 保存失败', e);
+	  }
+	}
+    let appData = loadData();
+
+    // 当前查看的周（null 表示本周；否则是周一日期字符串）
+    let viewingWeekKey = null;
+    // 日历当前展示的月份（Date 对象，取当月1号）
+    let calendarMonth = (function() {
+      const d = new Date();
+      return new Date(d.getFullYear(), d.getMonth(), 1);
+    })();
+
+    // ---- 日期工具 ----
+    function getDateStr(date = new Date()) {
+      const y = date.getFullYear(), m = String(date.getMonth()+1).padStart(2,'0'), d = String(date.getDate()).padStart(2,'0');
+      return `${y}-${m}-${d}`;
+    }
+    function getTomorrowDateStr() { const t = new Date(); t.setDate(t.getDate()+1); return getDateStr(t); }
+    function getTodayDateStr() { return getDateStr(new Date()); }
+    function getWeekdayIndex(date = new Date()) { return date.getDay(); }
+    function getTomorrowWeekdayIndex() { const t = new Date(); t.setDate(t.getDate()+1); return t.getDay(); }
+    function getChineseWeekday(idx) { return ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'][idx]; }
+
+    function getMondayKey(date = new Date()) {
+      const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const wd = d.getDay();
+      const diff = wd === 0 ? -6 : 1 - wd;
+      d.setDate(d.getDate() + diff);
+      return getDateStr(d);
+    }
+    function getCurrentWeekKey() { return getMondayKey(new Date()); }
+    function getSundayFromMondayKey(mondayKey) {
+      const [y, m, d] = mondayKey.split('-').map(Number);
+      const mon = new Date(y, m-1, d);
+      const sun = new Date(mon); sun.setDate(sun.getDate() + 6);
+      return getDateStr(sun);
+    }
+    function formatWeekRange(mondayKey) {
+      return `${mondayKey} ~ ${getSundayFromMondayKey(mondayKey)}`;
+    }
+
+    function getLeaveListForDate(dateStr) { return appData.leaveRecords[dateStr] || []; }
+    function setLeaveListForDate(dateStr, leaveIds) {
+      if (leaveIds.length === 0) delete appData.leaveRecords[dateStr];
+      else appData.leaveRecords[dateStr] = [...new Set(leaveIds)];
+      saveData(appData);
+    }
+
+    // ============================================================
+    // 周统计计算 & 归档
+    // ============================================================
+    function computeWeekStatsFor(mondayKey) {
+      const [y, m, d] = mondayKey.split('-').map(Number);
+      const monday = new Date(y, m-1, d);
+      const weekDates = [];
+      for (let i = 0; i < 7; i++) {
+        const dt = new Date(monday); dt.setDate(dt.getDate() + i);
+        weekDates.push({ dateStr: getDateStr(dt), weekday: dt.getDay() });
+      }
+      const result = [];
+      appData.employees.forEach(emp => {
+        let shouldWork = 0, leave = 0;
+        weekDates.forEach(({ dateStr, weekday }) => {
+          if (emp.restDay === weekday) return;
+          shouldWork++;
+          if (getLeaveListForDate(dateStr).includes(emp.id)) leave++;
+        });
+        const rate = shouldWork === 0 ? 1 : Math.max(0, (shouldWork - leave) / shouldWork);
+        result.push({
+          id: emp.id, name: emp.name, job: emp.job,
+          shouldWorkDays: shouldWork, leaveDays: leave, attendanceRate: rate,
+        });
+      });
+      return { mondayKey, employees: result, computedAt: Date.now() };
+    }
+
+    function getCurrentWeekStats() {
+      const mondayKey = getCurrentWeekKey();
+      const fresh = computeWeekStatsFor(mondayKey);
+      appData.weeklyStats[mondayKey] = fresh;
+      saveData(appData);
+      return fresh;
+    }
+
+    function getViewingWeekStats() {
+      if (viewingWeekKey && viewingWeekKey !== getCurrentWeekKey()) {
+        return appData.weeklyStats[viewingWeekKey] || computeWeekStatsFor(viewingWeekKey);
+      }
+      return getCurrentWeekStats();
+    }
+
+    // 出勤率颜色
+    function getRateColor(rate) {
+      const green = [46, 204, 113], yellow = [241, 196, 15], red = [231, 76, 60];
+      let r, g, b;
+      if (rate >= 0.5) {
+        const t = (rate - 0.5) / 0.5;
+        r = Math.round(yellow[0] + (green[0] - yellow[0]) * t);
+        g = Math.round(yellow[1] + (green[1] - yellow[1]) * t);
+        b = Math.round(yellow[2] + (green[2] - yellow[2]) * t);
+      } else {
+        const t = rate / 0.5;
+        r = Math.round(red[0] + (yellow[0] - red[0]) * t);
+        g = Math.round(red[1] + (yellow[1] - red[1]) * t);
+        b = Math.round(red[2] + (yellow[2] - red[2]) * t);
+      }
+      return `rgb(${r},${g},${b})`;
+    }
+
+    // ============================================================
+    // 周日历：生成某月的所有周（周一为起）
+    // ============================================================
+    function getWeeksOfMonth(year, month) {
+      // month: 0-11
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      // 从本月1号所在周的周一开始
+      const startMonday = new Date(firstDay);
+      const wd = startMonday.getDay();
+      startMonday.setDate(startMonday.getDate() - (wd === 0 ? 6 : wd - 1));
+
+      const weeks = [];
+      let cur = new Date(startMonday);
+      while (cur <= lastDay) {
+        const mondayKey = getDateStr(cur);
+        const sunday = new Date(cur); sunday.setDate(sunday.getDate() + 6);
+        // 判断这周是否与本月有交集
+        if (sunday >= firstDay || cur <= lastDay) {
+          // 只保留和本月有交集的周
+          if (sunday >= firstDay && cur <= lastDay) {
+            weeks.push({
+              mondayKey,
+              range: `${getDateStr(cur).slice(5)} ~ ${getDateStr(sunday).slice(5)}`,
+              startDate: new Date(cur),
+              endDate: new Date(sunday),
+            });
+          }
+        }
+        cur.setDate(cur.getDate() + 7);
+      }
+      return weeks;
+    }
+
+    function renderWeekCalendar() {
+      const year = calendarMonth.getFullYear();
+      const month = calendarMonth.getMonth();
+      document.getElementById('calMonthLabel').textContent = `${year}年${month+1}月`;
+      const weeks = getWeeksOfMonth(year, month);
+      const currentWeekKey = getCurrentWeekKey();
+      const activeKey = viewingWeekKey || currentWeekKey;
+      const listEl = document.getElementById('weekList');
+
+      if (!weeks.length) {
+        listEl.innerHTML = '<div class="empty-message" style="padding:12px 0;">本月无周数据</div>';
+        return;
+      }
+
+      listEl.innerHTML = weeks.map((w, idx) => {
+        const isActive = w.mondayKey === activeKey;
+        const isCurrent = w.mondayKey === currentWeekKey;
+        return `<div class="week-item ${isActive ? 'active' : ''}" data-week="${w.mondayKey}">
+          <div>
+            <span class="week-num">第 ${idx+1} 周</span>
+            <span class="week-range" style="margin-left:6px;">${w.range}</span>
+          </div>
+          ${isCurrent ? '<span class="week-badge">本周</span>' : (isActive ? '<span class="week-badge">✓</span>' : '')}
+        </div>`;
+      }).join('');
+
+      // 绑定点击切换
+      listEl.querySelectorAll('.week-item').forEach(el => {
+        el.addEventListener('click', () => {
+          const weekKey = el.dataset.week;
+          switchToWeek(weekKey);
+        });
+      });
+    }
+
+    // 切换到指定周
+    function switchToWeek(weekKey) {
+      if (weekKey === getCurrentWeekKey()) {
+        viewingWeekKey = null;
+      } else {
+        viewingWeekKey = weekKey;
+        if (!appData.weeklyStats[weekKey]) {
+          appData.weeklyStats[weekKey] = computeWeekStatsFor(weekKey);
+          saveData(appData);
+        }
+      }
+      // 同步日历到该周所在月份
+      const [y, m] = weekKey.split('-').map(Number);
+      calendarMonth = new Date(y, m - 1, 1);
+      renderWeekCalendar();
+      renderScheduleTable();
+    }
+
+    // ============================================================
+    // 出勤表渲染
+    // ============================================================
+    function buildAttendanceDataFor(targetWeekday, dateStr) {
+      const leaveIds = getLeaveListForDate(dateStr);
+      const working = [], resting = [], leave = [];
+      appData.employees.forEach(emp => {
+        const isRest = (emp.restDay === targetWeekday);
+        const isLeave = leaveIds.includes(emp.id);
+        if (isLeave) leave.push({ ...emp });
+        else if (isRest) resting.push({ ...emp });
+        else working.push({ ...emp });
+      });
+      const isMachineJob = (emp) => emp.machine && emp.machine.trim() !== '';
+      const machineWorkers = working.filter(isMachineJob);
+      const otherWorkers = working.filter(e => !isMachineJob(e));
+      machineWorkers.sort((a,b) => {
+        const na = parseInt((a.machine||'').replace(/[^0-9]/g,''),10) || 999;
+        const nb = parseInt((b.machine||'').replace(/[^0-9]/g,''),10) || 999;
+        return na - nb;
+      });
+      return { working: [...machineWorkers, ...otherWorkers], leave, resting, leaveIds };
+    }
+
+    function renderEmployeeList() {
+      const container = document.getElementById('employeeList');
+      if (!appData.employees.length) {
+        container.innerHTML = '<span class="empty-message" style="padding:8px;">暂无人员，请添加上方录入</span>';
+        return;
+      }
+      container.innerHTML = appData.employees.map(emp => {
+        const machineText = emp.machine ? ` · ${emp.machine}` : '';
+        const restText = `周${['日','一','二','三','四','五','六'][emp.restDay]}休`;
+        return `<span class="tag">
+          <span><strong>${emp.name}</strong> (${emp.id}) · ${emp.job}${machineText} · ${restText}</span>
+          <span class="close" data-id="${emp.id}" title="删除">✕</span>
+        </span>`;
+      }).join('');
+      container.querySelectorAll('.close').forEach(el => {
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const id = el.dataset.id;
+          appData.employees = appData.employees.filter(emp => emp.id !== id);
+          Object.keys(appData.leaveRecords).forEach(date => {
+            appData.leaveRecords[date] = appData.leaveRecords[date].filter(l => l !== id);
+            if (!appData.leaveRecords[date].length) delete appData.leaveRecords[date];
+          });
+          const curKey = getCurrentWeekKey();
+          if (appData.weeklyStats[curKey]) {
+            appData.weeklyStats[curKey].employees = appData.weeklyStats[curKey].employees.filter(e => e.id !== id);
+          }
+          saveData(appData); renderAll();
+        });
+      });
+    }
+
+    function buildAttendanceTableHTML(targetWeekday, dateStr) {
+      const data = buildAttendanceDataFor(targetWeekday, dateStr);
+      if (!data.working.length && !data.leave.length && !data.resting.length) {
+        return '<div class="empty-message">暂无人员数据</div>';
+      }
+      let html = '<table><thead><tr><th>姓名</th><th>职责</th><th>机台</th><th>状态</th></tr></thead><tbody>';
+      data.working.forEach(emp => {
+        const m = emp.machine || '—';
+        html += `<tr data-empid="${emp.id}">
+          <td><span class="status-dot" style="background:#2ecc71;"></span>${emp.name}</td>
+          <td><span class="job-badge">${emp.job}</span></td>
+          <td><span class="machine-badge">${m}</span></td>
+          <td><span style="color:#1e7e34;">出勤</span></td>
+        </tr>`;
+      });
+      data.leave.forEach(emp => {
+        const m = emp.machine || '—';
+        html += `<tr data-empid="${emp.id}">
+          <td><span class="status-dot" style="background:#e67e22;"></span>${emp.name}</td>
+          <td><span class="leave-badge">请假</span></td>
+          <td><span class="machine-badge">${m}</span></td>
+          <td><span style="color:#b33a3a;">请假</span></td>
+        </tr>`;
+      });
+      data.resting.forEach(emp => {
+        const m = emp.machine || '—';
+        html += `<tr data-empid="${emp.id}">
+          <td><span class="status-dot" style="background:#95a5a6;"></span>${emp.name}</td>
+          <td><span class="off-badge">O班</span></td>
+          <td><span class="machine-badge">${m}</span></td>
+          <td><span style="color:#5b6f82;">休息</span></td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      return html;
+    }
+
+    function renderAttendanceForWrapper(wrapperId, targetWeekday, dateStr) {
+      const wrapper = document.getElementById(wrapperId);
+      wrapper.innerHTML = buildAttendanceTableHTML(targetWeekday, dateStr);
+      wrapper.querySelectorAll('tbody tr').forEach(row => {
+        row.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const empId = row.dataset.empid;
+          let leaveList = getLeaveListForDate(dateStr);
+          if (leaveList.includes(empId)) leaveList = leaveList.filter(id => id !== empId);
+          else leaveList.push(empId);
+          setLeaveListForDate(dateStr, leaveList);
+          renderAll();
+        });
+      });
+    }
+
+    function renderTodayAttendance() {
+      const idx = getWeekdayIndex();
+      document.getElementById('todayWeekdayLabel').textContent = getChineseWeekday(idx);
+      renderAttendanceForWrapper('attendanceTableWrapper', idx, getTodayDateStr());
+    }
+    function renderTomorrowAttendance() {
+      const idx = getTomorrowWeekdayIndex();
+      document.getElementById('tomorrowWeekdayLabel').textContent = getChineseWeekday(idx);
+      renderAttendanceForWrapper('tomorrowTableWrapper', idx, getTomorrowDateStr());
+    }
+
+    // ---- 排班表 ----
+    function buildScheduleTableHTML(weekStats) {
+      if (!weekStats || !weekStats.employees.length) return '<div class="empty-message">暂无人员数据</div>';
+      let html = '<table><thead><tr><th>姓名</th><th>职责</th><th>出勤率</th><th>请假天数</th></tr></thead><tbody>';
+      weekStats.employees.forEach(e => {
+        const rate = e.attendanceRate;
+        const color = getRateColor(rate);
+        html += `<tr>
+          <td>${e.name}</td>
+          <td><span class="job-badge">${e.job}</span></td>
+          <td>
+            <div class="rate-bar-wrap">
+              <div class="rate-bar"><div class="rate-bar-fill" style="width:${(rate*100).toFixed(0)}%;background:${color};"></div></div>
+              <span class="rate-text" style="color:${color};">${(rate*100).toFixed(0)}%</span>
+            </div>
+          </td>
+          <td><span class="leave-count ${e.leaveDays === 0 ? 'zero' : 'some'}">${e.leaveDays} 天</span></td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      return html;
+    }
+
+    function updateViewingBadges() {
+      const isCurrent = !viewingWeekKey || viewingWeekKey === getCurrentWeekKey();
+      const weekKey = viewingWeekKey || getCurrentWeekKey();
+      const badge = document.getElementById('viewingWeekBadge');
+      const label = document.getElementById('scheduleWeekLabel');
+      const backBtn = document.getElementById('backToCurrentWeekBtn');
+      if (isCurrent) {
+        badge.textContent = '本周';
+        badge.className = 'day-badge';
+        backBtn.style.display = 'none';
+        label.textContent = '📅 本周范围：' + formatWeekRange(weekKey);
+      } else {
+        badge.textContent = '历史周';
+        badge.className = 'day-badge history';
+        backBtn.style.display = '';
+        label.textContent = '📅 查看历史：' + formatWeekRange(weekKey) + '（只读快照）';
+      }
+    }
+
+    function renderScheduleTable() {
+      updateViewingBadges();
+      const weekStats = getViewingWeekStats();
+      document.getElementById('scheduleTableWrapper').innerHTML = buildScheduleTableHTML(weekStats);
+    }
+
+    function renderAll() {
+      renderEmployeeList();
+      renderTodayAttendance();
+      renderTomorrowAttendance();
+      renderWeekCalendar();
+      renderScheduleTable();
+    }
+
+    // ============================================================
+    // 图片导出
+    // ============================================================
+    let html2canvasLoaded = false, html2canvasLoading = false;
+    const html2canvasCallbacks = [];
+
+    function loadHtml2Canvas(cb) {
+      if (html2canvasLoaded) { cb(); return; }
+      html2canvasCallbacks.push(cb);
+      if (html2canvasLoading) return;
+      html2canvasLoading = true;
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+      script.onload = () => { html2canvasLoaded = true; html2canvasLoading = false; html2canvasCallbacks.forEach(fn => fn()); html2canvasCallbacks.length = 0; };
+      script.onerror = () => {
+        const s2 = document.createElement('script');
+        s2.src = 'https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js';
+        s2.onload = () => { html2canvasLoaded = true; html2canvasLoading = false; html2canvasCallbacks.forEach(fn => fn()); html2canvasCallbacks.length = 0; };
+        s2.onerror = () => { html2canvasLoading = false; html2canvasCallbacks.length = 0; alert('图片导出库加载失败，请检查网络后重试'); };
+        document.head.appendChild(s2);
+      };
+      document.head.appendChild(script);
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => t.classList.remove('show'), 1800);
+    }
+
+    function exportAsImage(tableWrapperId, title, filename) {
+      const sourceWrapper = document.getElementById(tableWrapperId);
+      const table = sourceWrapper.querySelector('table');
+      if (!table) { alert('没有可导出的表格内容'); return; }
+      loadHtml2Canvas(() => {
+        const snapshot = document.getElementById('export-snapshot');
+        const clonedTable = table.cloneNode(true);
+        let dateStr;
+        if (tableWrapperId === 'attendanceTableWrapper') dateStr = getTodayDateStr();
+        else if (tableWrapperId === 'tomorrowTableWrapper') dateStr = getTomorrowDateStr();
+        else dateStr = formatWeekRange(viewingWeekKey || getCurrentWeekKey());
+        snapshot.innerHTML = `
+          <div class="snapshot-title">${title}</div>
+          <div class="snapshot-subtitle">导出日期：${dateStr}</div>
+          <div class="table-wrapper" style="overflow:visible;border-radius:16px;border:1px solid #e2eaf1;">${clonedTable.outerHTML}</div>
+        `;
+        snapshot.style.width = '480px'; snapshot.style.padding = '20px'; snapshot.style.background = '#ffffff';
+        requestAnimationFrame(() => {
+          html2canvas(snapshot, {
+            scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false,
+            windowWidth: snapshot.scrollWidth, windowHeight: snapshot.scrollHeight,
+          }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = filename + '.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showToast('✅ 图片已导出');
+            snapshot.innerHTML = '';
+          }).catch(err => {
+            console.error('截图失败', err); alert('导出失败，请重试'); snapshot.innerHTML = '';
+          });
+        });
+      });
+    }
+
+    // ---- 事件绑定 ----
+    function bindEvents() {
+      document.getElementById('addEmpBtn').addEventListener('click', () => {
+        const id = document.getElementById('empIdInput').value.trim();
+        const name = document.getElementById('empNameInput').value.trim();
+        const job = document.getElementById('empJobInput').value.trim();
+        const machine = document.getElementById('empMachineInput').value.trim();
+        const restDay = parseInt(document.getElementById('empRestDay').value, 10);
+        if (!id || !name || !job) { alert('工号、姓名、职责不能为空'); return; }
+        if (appData.employees.some(e => e.id === id)) { alert('工号已存在'); return; }
+        appData.employees.push({ id, name, job, machine, restDay });
+        saveData(appData); renderAll();
+        document.getElementById('empIdInput').value = '';
+        document.getElementById('empNameInput').value = '';
+        document.getElementById('empJobInput').value = '';
+        document.getElementById('empMachineInput').value = '';
+      });
+
+      document.getElementById('clearAllBtn').addEventListener('click', () => {
+        if (confirm('确定删除所有人员数据？不可恢复。')) {
+          appData.employees = []; appData.leaveRecords = {}; appData.weeklyStats = {};
+          viewingWeekKey = null;
+          calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+          saveData(appData); renderAll();
+        }
+      });
+
+      document.getElementById('refreshAttendanceBtn').addEventListener('click', renderAll);
+      document.getElementById('refreshTomorrowBtn').addEventListener('click', renderAll);
+
+      document.getElementById('exportAttendanceImgBtn').addEventListener('click', () => {
+        exportAsImage('attendanceTableWrapper', '今日出勤表', '今日出勤表_' + getTodayDateStr());
+      });
+      document.getElementById('exportTomorrowImgBtn').addEventListener('click', () => {
+        exportAsImage('tomorrowTableWrapper', '次日出勤表', '次日出勤表_' + getTomorrowDateStr());
+      });
+      document.getElementById('exportScheduleImgBtn').addEventListener('click', () => {
+        const key = viewingWeekKey || getCurrentWeekKey();
+        const prefix = (viewingWeekKey && viewingWeekKey !== getCurrentWeekKey()) ? '历史排班_' : '本周排班_';
+        exportAsImage('scheduleTableWrapper', '排班表 · 出勤率', prefix + key);
+      });
+
+      // 返回当前周
+      document.getElementById('backToCurrentWeekBtn').addEventListener('click', () => {
+        switchToWeek(getCurrentWeekKey());
+      });
+
+      // 月份切换
+      document.getElementById('calPrevMonthBtn').addEventListener('click', () => {
+        calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1);
+        renderWeekCalendar();
+      });
+      document.getElementById('calNextMonthBtn').addEventListener('click', () => {
+        calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1);
+        renderWeekCalendar();
+      });
+    }
+
+	async function init() {
+	  bindEvents();
+	  appData = await loadData();
+	  renderAll();
+	}
+	init();
+  })();
+</script>
+</body>
+</html>
